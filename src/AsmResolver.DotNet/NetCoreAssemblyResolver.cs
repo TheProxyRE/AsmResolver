@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Runtime.InteropServices;
 
@@ -8,7 +9,7 @@ namespace AsmResolver.DotNet
     /// </summary>
     public class NetCoreAssemblyResolver : AssemblyResolverBase
     {
-        private readonly string _installationDirectory;
+        private readonly string _runtimeDirectory;
         
         /// <summary>
         /// Creates a new .NET Core assembly resolver, by attempting to autodetect the current .NET Core installation
@@ -24,10 +25,34 @@ namespace AsmResolver.DotNet
         /// <summary>
         /// Creates a new .NET Core assembly resolver.
         /// </summary>
-        /// <param name="installationDirectory">The installation directory of .NET Core.</param>
-        public NetCoreAssemblyResolver(string installationDirectory)
+        /// <param name="runtimeDirectory">The full path to the directory containing the runtime dlls.</param>
+        public NetCoreAssemblyResolver(string runtimeDirectory)
+            => _runtimeDirectory = runtimeDirectory;
+
+        /// <summary>
+        /// Creates a new .NET Core assembly resolver.
+        /// </summary>
+        /// <param name="runtimeName">The full name of the target runtime.</param>
+        /// <param name="version">The version string of the target runtime.</param>
+        public NetCoreAssemblyResolver(string runtimeName, string version) 
+            : this(Path.Combine(FindRuntimeBaseDirectory(), runtimeName, version))
         {
-            _installationDirectory = installationDirectory;
+        }
+
+        /// <summary>
+        /// Creates a new .NET Core assembly resolver.
+        /// </summary>
+        /// <param name="runtimeBaseDirectory">The installation directory of .NET Core.</param>
+        /// <param name="runtimeName">The full name of the target runtime.</param>
+        /// <param name="version">The version string of the target runtime.</param>
+        public NetCoreAssemblyResolver(string runtimeBaseDirectory, string runtimeName, string version)
+            : this(Path.Combine(runtimeBaseDirectory, runtimeName,version))
+        {
+        }
+
+        private static string FindRuntimeBaseDirectory()
+        {
+            throw new NotSupportedException();
         }
 
         /// <inheritdoc />
@@ -36,8 +61,8 @@ namespace AsmResolver.DotNet
             string path = null;
             
             var token = assembly.GetPublicKeyToken();
-            if (token != null && !string.IsNullOrEmpty(_installationDirectory))
-                path = ProbeDirectory(assembly, _installationDirectory);
+            if (token != null && !string.IsNullOrEmpty(_runtimeDirectory))
+                path = ProbeDirectory(assembly, _runtimeDirectory);
             if (string.IsNullOrEmpty(path))
                 path = ProbeSearchDirectories(assembly);
 
