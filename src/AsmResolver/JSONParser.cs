@@ -322,12 +322,12 @@ namespace AsmResolver
 
             if (!fieldInfoCache.TryGetValue(type, out Dictionary<string, FieldInfo> nameToField))
             {
-                nameToField = CreateMemberNameDictionary(type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy));
+                nameToField = CreateMemberNameDictionary(type.GetFields((BindingFlags)(-1)));
                 fieldInfoCache.Add(type, nameToField);
             }
             if (!propertyInfoCache.TryGetValue(type, out Dictionary<string, PropertyInfo> nameToProperty))
             {
-                nameToProperty = CreateMemberNameDictionary(type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy));
+                nameToProperty = CreateMemberNameDictionary(type.GetProperties((BindingFlags)(-1)));
                 propertyInfoCache.Add(type, nameToProperty);
             }
 
