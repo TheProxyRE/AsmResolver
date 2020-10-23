@@ -20,14 +20,17 @@ namespace AsmResolver.DotNet
                 ? Path.GetDirectoryName(typeof(object).Assembly.Location)
                 : null)
         {
+            FindRuntimeBaseDirectory();
         }
 
         /// <summary>
         /// Creates a new .NET Core assembly resolver.
         /// </summary>
         /// <param name="runtimeDirectory">The full path to the directory containing the runtime dlls.</param>
-        public NetCoreAssemblyResolver(string runtimeDirectory)
-            => _runtimeDirectory = runtimeDirectory;
+        public NetCoreAssemblyResolver(string runtimeDirectory) 
+            => _runtimeDirectory = Directory.Exists(runtimeDirectory) 
+            ? runtimeDirectory 
+            : null;
 
         /// <summary>
         /// Creates a new .NET Core assembly resolver.
@@ -52,7 +55,24 @@ namespace AsmResolver.DotNet
 
         private static string FindRuntimeBaseDirectory()
         {
-            throw new NotSupportedException();
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                using var key64 = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\WOW6432Node\dotnet\Setup\InstalledVersions\x64");
+                if (key64?.GetValue("InstallLocation") is string location64)
+                    return location64;
+                using var key32 = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\WOW6432Node\dotnet\Setup\InstalledVersions\x86");
+                if (key32?.GetValue("InstallLocation") is string location32)
+                    return location32;
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+            }
+            if (RuntimeInformation.FrameworkDescription.Contains("Core"))
+                return Path.GetFullPath(Path.Combine(Path.GetDirectoryName(typeof(object).Assembly.Location), "..\\..\\"));
+            return string.Empty;
         }
 
         /// <inheritdoc />
