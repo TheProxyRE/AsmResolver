@@ -12,7 +12,13 @@ namespace AsmResolver.DotNet
     public class NetCoreAssemblyResolver : AssemblyResolverBase
     {
         private readonly string _runtimeDirectory;
-        
+        private static string[] CommonUnixDotnetRuntimePaths = new string[]
+        {
+            "/usr/share/dotnet/shared",
+            "/opt/dotnet/shared/",
+            "~/share/dotnet/shared",
+        };
+
         /// <summary>
         /// Creates a new .NET Core assembly resolver, by attempting to autodetect the current .NET Core installation
         /// directory.
@@ -53,12 +59,7 @@ namespace AsmResolver.DotNet
             : this(GetSutablePath(Path.Combine(runtimeBaseDirectory, runtimeName),version))
         {
         }
-        private static string[] CommonUnixDotnetRuntimePaths = new string[]
-        {
-            "/usr/share/dotnet/shared",
-            "/opt/dotnet/shared/",
-            "~/share/dotnet/shared",
-        };
+        
         private static string FindRuntimeBaseDirectory()
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -77,23 +78,26 @@ namespace AsmResolver.DotNet
                         return commonPath;
             }
             if (RuntimeInformation.FrameworkDescription.Contains("Core"))
-                return Path.GetFullPath(Path.Combine(Path.GetDirectoryName(typeof(object).Assembly.Location), "..\\..\\"));
+                return Path.GetFullPath(Path.Combine(Path.GetDirectoryName(typeof(object).Assembly.Location), "../../"));
             return string.Empty;
         }
 
         private static string GetSutablePath(string runtimePath, string runtimeVersion)
         {
             var defaultResult = Path.Combine(runtimePath, runtimeVersion);
-            if(!Version.TryParse(runtimeVersion,out var version))
+            //TODO: Allow rc versions :assing: @Washi
+            if (!Version.TryParse(runtimeVersion,out var version))
                 return defaultResult;
             var dirVersions = GetAllVersions(runtimePath);
             var greaterVersions = dirVersions
-                .Where(v => v.Version >= version);
-            if (greaterVersions.Count() == 0)
+                .Where(v => v.Version >= version)
+                .ToArray();
+            if (greaterVersions.Length == 0)
                 return defaultResult;
             var sameVersion = greaterVersions
-                .Where(v => v.Version < new Version(version.Major, version.Minor + 1));
-            if(sameVersion.Count() != 0)
+                .Where(v => v.Version < new Version(version.Major, version.Minor + 1))
+                .ToArray();
+            if(sameVersion.Length != 0)
                 return sameVersion.Max().Directory;
             return greaterVersions.Min().Directory;
         }
@@ -105,6 +109,7 @@ namespace AsmResolver.DotNet
             var list = new List<(Version, string)>();
             foreach(var directory in Directory.GetDirectories(runtimePath))
             {
+                //TODO: Allow rc versions :assing: @Washi
                 if (!Version.TryParse(Path.GetFileName(directory), out var version))
                     continue;
                 list.Add((version, directory));

@@ -859,7 +859,7 @@ namespace AsmResolver.DotNet
             AssemblyResolverBase resolver = null;
             if (corLib.Name == "mscorlib")
             {
-                resolver = (AssemblyResolverBase)new NetFrameworkAssemblyResolver();
+                resolver = new NetFrameworkAssemblyResolver();
             }
             else
             {
@@ -871,11 +871,8 @@ namespace AsmResolver.DotNet
                         var json = File.ReadAllText(runtimePath).FromJson<RuntimeConfig>();
                         resolver = new NetCoreAssemblyResolver(json.RuntimeOptions.Framework.Name, json.RuntimeOptions.Framework.Version);
                     }
-                    else
-                        resolver = new NetCoreAssemblyResolver();
                 }
-                else
-                    resolver = new NetCoreAssemblyResolver();
+                resolver ??= new NetCoreAssemblyResolver();
             }
 
             if (!string.IsNullOrEmpty(workingDirectory))
