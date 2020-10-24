@@ -26,7 +26,7 @@ namespace AsmResolver.PE.DotNet.Cil
         /// fat format.</exception>
         public new static CilRawFatMethodBody FromReader(IBinaryStreamReader reader)
         {
-            uint fileOffset = reader.FileOffset;
+            ulong fileOffset = reader.Offset;
             uint rva = reader.Rva;
             
             // Read flags.
@@ -44,7 +44,11 @@ namespace AsmResolver.PE.DotNet.Cil
             uint localVarSigToken = reader.ReadUInt32();
 
             // Move to code.
-            reader.FileOffset = (uint) (fileOffset + headerSize);
+            reader.Offset = fileOffset + (ulong) headerSize;
+
+            // Verify code size.
+            if (reader.Offset + codeSize > reader.StartOffset + reader.Length)
+                throw new FormatException("Invalid fat CIL method body code size.");
 
             // Read code.
             var code = new byte[codeSize];
@@ -161,10 +165,10 @@ namespace AsmResolver.PE.DotNet.Cil
         public override uint GetPhysicalSize()
         {
             uint length = (uint) (12 + Code.Length);
-            uint endOffset = FileOffset + length;
+            ulong endOffset = Offset + length;
 
-            uint sectionsOffset = endOffset.Align(4);
-            length += sectionsOffset - endOffset;
+            ulong sectionsOffset = endOffset.Align(4);
+            length += (uint) (sectionsOffset - endOffset);
 
             length += (uint) ExtraSections.Sum(x => x.GetPhysicalSize());
             
