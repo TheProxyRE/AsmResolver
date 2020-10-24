@@ -53,23 +53,28 @@ namespace AsmResolver.DotNet
             : this(GetSutablePath(Path.Combine(runtimeBaseDirectory, runtimeName),version))
         {
         }
-
+        private static string[] CommonUnixDotnetRuntimePaths = new string[]
+        {
+            "/usr/share/dotnet/shared",
+            "/opt/dotnet/shared/",
+            "~/share/dotnet/shared",
+        }
         private static string FindRuntimeBaseDirectory()
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 using var key64 = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\WOW6432Node\dotnet\Setup\InstalledVersions\x64");
-                if (key64?.GetValue("InstallLocation") is string location64)
+                if (key64?.GetValue("InstallLocation") is string location64 && Directory.Exists(Path.Combine(location64, "shared")))
                     return Path.Combine(location64, "shared");
                 using var key32 = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\WOW6432Node\dotnet\Setup\InstalledVersions\x86");
-                if (key32?.GetValue("InstallLocation") is string location32)
+                if (key32?.GetValue("InstallLocation") is string location32 && Directory.Exists(Path.Combine(location32, "shared")))
                     return Path.Combine(location32,"shared");
             }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
+                foreach (var commonPath in CommonUnixDotnetRuntimePaths)
+                    if (Directory.Exists(commonPath))
+                        return commonPath;
             }
             if (RuntimeInformation.FrameworkDescription.Contains("Core"))
                 return Path.GetFullPath(Path.Combine(Path.GetDirectoryName(typeof(object).Assembly.Location), "..\\..\\"));
