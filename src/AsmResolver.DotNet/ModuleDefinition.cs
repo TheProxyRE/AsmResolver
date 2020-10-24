@@ -869,7 +869,7 @@ namespace AsmResolver.DotNet
                     if (Directory.Exists(workingDirectory) && !string.IsNullOrWhiteSpace(fileName) && File.Exists(runtimePath))
                     {
                         var json = File.ReadAllText(runtimePath).FromJson<RuntimeConfig>();
-                            resolver = new NetCoreAssemblyResolver(json.RuntimeOptions.Framework.Name, json.RuntimeOptions.Framework.Version);
+                        resolver = new NetCoreAssemblyResolver(json.RuntimeOptions.Framework.Name, json.RuntimeOptions.Framework.Version);
                     }
                     else
                         resolver = new NetCoreAssemblyResolver();
