@@ -863,16 +863,19 @@ namespace AsmResolver.DotNet
             }
             else
             {
-                var runtimePath = Path.Combine(workingDirectory, $"{fileName}.runtimeconfig.json");
-                if (Directory.Exists(workingDirectory) && !string.IsNullOrWhiteSpace(fileName) && File.Exists(runtimePath))
+                if (!string.IsNullOrWhiteSpace(workingDirectory) && !string.IsNullOrWhiteSpace(fileName))
                 {
-                    var json = File.ReadAllText(runtimePath).FromJson<RuntimeConfig>();
-                    resolver = new NetCoreAssemblyResolver(json.RuntimeOptions.Framework.Name, json.RuntimeOptions.Framework.Version);
+                    var runtimePath = Path.Combine(workingDirectory, $"{fileName}.runtimeconfig.json");
+                    if (Directory.Exists(workingDirectory) && !string.IsNullOrWhiteSpace(fileName) && File.Exists(runtimePath))
+                    {
+                        var json = File.ReadAllText(runtimePath).FromJson<RuntimeConfig>();
+                            resolver = new NetCoreAssemblyResolver(json.RuntimeOptions.Framework.Name, json.RuntimeOptions.Framework.Version);
+                    }
+                    else
+                        resolver = new NetCoreAssemblyResolver();
                 }
                 else
-                {
                     resolver = new NetCoreAssemblyResolver();
-                }
             }
 
             if (!string.IsNullOrEmpty(workingDirectory))

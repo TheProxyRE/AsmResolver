@@ -58,7 +58,7 @@ namespace AsmResolver.DotNet
             "/usr/share/dotnet/shared",
             "/opt/dotnet/shared/",
             "~/share/dotnet/shared",
-        }
+        };
         private static string FindRuntimeBaseDirectory()
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
