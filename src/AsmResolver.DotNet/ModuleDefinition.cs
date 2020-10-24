@@ -15,6 +15,7 @@ using AsmResolver.PE.DotNet.Metadata.Tables;
 using AsmResolver.PE.File;
 using AsmResolver.PE.File.Headers;
 using AsmResolver.PE.Win32Resources;
+using System.Runtime.Serialization;
 
 namespace AsmResolver.DotNet
 {
@@ -851,17 +852,53 @@ namespace AsmResolver.DotNet
         /// </summary>
         /// <param name="corLib">The corlib reference.</param>
         /// <param name="workingDirectory">The working directory to search</param>
+        /// <param name="fileName">File name of the assembly without extension</param>
         /// <returns>The resolver.</returns>
-        protected static IAssemblyResolver CreateAssemblyResolver(IResolutionScope corLib, string workingDirectory = null)
+        protected static IAssemblyResolver CreateAssemblyResolver(IResolutionScope corLib, string workingDirectory = null, string fileName = null)
         {
-            var resolver = corLib.Name == "mscorlib"
-                ? (AssemblyResolverBase)new NetFrameworkAssemblyResolver()
-                : new NetCoreAssemblyResolver();
+            AssemblyResolverBase resolver = null;
+            if (corLib.Name == "mscorlib")
+            {
+                resolver = (AssemblyResolverBase)new NetFrameworkAssemblyResolver();
+            }
+            else
+            {
+                var runtimePath = Path.Combine(workingDirectory, $"{fileName}.runtimeconfig.json");
+                if (Directory.Exists(workingDirectory) && !string.IsNullOrWhiteSpace(fileName) && File.Exists(runtimePath))
+                {
+                    var json = File.ReadAllText(runtimePath).FromJson<RuntimeConfig>();
+                    resolver = new NetCoreAssemblyResolver(json.RuntimeOptions.Framework.Name, json.RuntimeOptions.Framework.Version);
+                }
+                else
+                {
+                    resolver = new NetCoreAssemblyResolver();
+                }
+            }
 
             if (!string.IsNullOrEmpty(workingDirectory))
                 resolver.SearchDirectories.Add(workingDirectory);
 
             return resolver;
+        }
+
+        private struct RuntimeConfig
+        {
+            [DataMember(Name = "runtimeOptions")]
+            internal RuntimeConfigOptions RuntimeOptions;
+            internal struct RuntimeConfigOptions
+            {
+                [DataMember(Name = "tfm")]
+                internal string TargetFramework;
+                [DataMember(Name = "framework")]
+                internal RuntimeConfigFramework Framework;
+                internal struct RuntimeConfigFramework
+                {
+                    [DataMember(Name = "name")]
+                    internal string Name;
+                    [DataMember(Name = "version")]
+                    internal string Version;
+                }
+            }
         }
 
         /// <summary>

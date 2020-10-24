@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace AsmResolver.DotNet
@@ -16,11 +18,8 @@ namespace AsmResolver.DotNet
         /// directory.
         /// </summary>
         public NetCoreAssemblyResolver()
-            : this (RuntimeInformation.FrameworkDescription.Contains("Core")
-                ? Path.GetDirectoryName(typeof(object).Assembly.Location)
-                : null)
+            : this (null)
         {
-            FindRuntimeBaseDirectory();
         }
 
         /// <summary>
@@ -30,7 +29,9 @@ namespace AsmResolver.DotNet
         public NetCoreAssemblyResolver(string runtimeDirectory) 
             => _runtimeDirectory = Directory.Exists(runtimeDirectory) 
             ? runtimeDirectory 
-            : null;
+            : RuntimeInformation.FrameworkDescription.Contains("Core")
+                ? Path.GetDirectoryName(typeof(object).Assembly.Location)
+                : null;
 
         /// <summary>
         /// Creates a new .NET Core assembly resolver.
@@ -38,7 +39,7 @@ namespace AsmResolver.DotNet
         /// <param name="runtimeName">The full name of the target runtime.</param>
         /// <param name="version">The version string of the target runtime.</param>
         public NetCoreAssemblyResolver(string runtimeName, string version) 
-            : this(Path.Combine(FindRuntimeBaseDirectory(), runtimeName, version))
+            : this(FindRuntimeBaseDirectory(), runtimeName, version)
         {
         }
 
@@ -49,7 +50,7 @@ namespace AsmResolver.DotNet
         /// <param name="runtimeName">The full name of the target runtime.</param>
         /// <param name="version">The version string of the target runtime.</param>
         public NetCoreAssemblyResolver(string runtimeBaseDirectory, string runtimeName, string version)
-            : this(Path.Combine(runtimeBaseDirectory, runtimeName,version))
+            : this(GetSutablePath(Path.Combine(runtimeBaseDirectory, runtimeName),version))
         {
         }
 
@@ -59,10 +60,10 @@ namespace AsmResolver.DotNet
             {
                 using var key64 = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\WOW6432Node\dotnet\Setup\InstalledVersions\x64");
                 if (key64?.GetValue("InstallLocation") is string location64)
-                    return location64;
+                    return Path.Combine(location64, "shared");
                 using var key32 = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\WOW6432Node\dotnet\Setup\InstalledVersions\x86");
                 if (key32?.GetValue("InstallLocation") is string location32)
-                    return location32;
+                    return Path.Combine(location32,"shared");
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
@@ -73,6 +74,37 @@ namespace AsmResolver.DotNet
             if (RuntimeInformation.FrameworkDescription.Contains("Core"))
                 return Path.GetFullPath(Path.Combine(Path.GetDirectoryName(typeof(object).Assembly.Location), "..\\..\\"));
             return string.Empty;
+        }
+
+        private static string GetSutablePath(string runtimePath, string runtimeVersion)
+        {
+            var defaultResult = Path.Combine(runtimePath, runtimeVersion);
+            if(!Version.TryParse(runtimeVersion,out var version))
+                return defaultResult;
+            var dirVersions = GetAllVersions(runtimePath);
+            var greaterVersions = dirVersions
+                .Where(v => v.Version >= version);
+            if (greaterVersions.Count() == 0)
+                return defaultResult;
+            var sameVersion = greaterVersions
+                .Where(v => v.Version < new Version(version.Major, version.Minor + 1));
+            if(sameVersion.Count() != 0)
+                return sameVersion.Max().Directory;
+            return greaterVersions.Min().Directory;
+        }
+
+        private static IEnumerable<(Version Version, string Directory)> GetAllVersions(string runtimePath)
+        {
+            if (!Directory.Exists(runtimePath))
+                return Array.Empty<(Version, string)>();
+            var list = new List<(Version, string)>();
+            foreach(var directory in Directory.GetDirectories(runtimePath))
+            {
+                if (!Version.TryParse(Path.GetFileName(directory), out var version))
+                    continue;
+                list.Add((version, directory));
+            }
+            return list;
         }
 
         /// <inheritdoc />

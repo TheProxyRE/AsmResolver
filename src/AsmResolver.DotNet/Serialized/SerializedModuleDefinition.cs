@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using AsmResolver.Collections;
 using AsmResolver.DotNet.Collections;
@@ -101,7 +102,11 @@ namespace AsmResolver.DotNet.Serialized
                 corLib = CorLibTypeFactory.CorLibScope;
             }
 
-            var assemblyResolver = CreateAssemblyResolver(corLib, readParameters.WorkingDirectory);
+            var assemblyResolver = CreateAssemblyResolver(corLib, 
+                readParameters.WorkingDirectory, 
+                string.IsNullOrWhiteSpace(FilePath)
+                ? null 
+                : Path.GetFileNameWithoutExtension(FilePath));
             MetadataResolver = new DefaultMetadataResolver(assemblyResolver);
 
             // Prepare lazy RID lists.
