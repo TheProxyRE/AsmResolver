@@ -15,6 +15,12 @@ namespace AsmResolver.PE
     /// </summary>
     public interface IPEImage
     {
+        public string FilePath
+        {
+            get;
+            set;
+        }
+
         /// <summary>
         /// Gets or sets the machine type that the PE image is targeting.
         /// </summary>

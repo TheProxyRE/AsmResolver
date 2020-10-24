@@ -23,14 +23,19 @@ namespace AsmResolver.PE
         private IList<BaseRelocation> _relocations;
         private readonly LazyVariable<IDotNetDirectory> _dotNetDirectory;
         private IList<DebugDataEntry> _debugData;
-        
+
         /// <summary>
         /// Opens a PE image from a specific file on the disk.
         /// </summary>
         /// <param name="filePath">The </param>
         /// <returns>The PE image that was opened.</returns>
         /// <exception cref="BadImageFormatException">Occurs when the file does not follow the PE file format.</exception>
-        public static IPEImage FromFile(string filePath) => FromFile(PEFile.FromFile(filePath));
+        public static IPEImage FromFile(string filePath)
+        {
+            var peImage = FromFile(PEFile.FromFile(filePath));
+            peImage.FilePath = filePath;
+            return peImage;
+        }
 
         /// <summary>
         /// Opens a PE image from a specific file on the disk.
@@ -39,8 +44,12 @@ namespace AsmResolver.PE
         /// <param name="readParameters">The parameters to use while reading the PE image.</param>
         /// <returns>The PE image that was opened.</returns>
         /// <exception cref="BadImageFormatException">Occurs when the file does not follow the PE file format.</exception>
-        public static IPEImage FromFile(string filePath, PEReadParameters readParameters) => 
-            FromFile(PEFile.FromFile(filePath), readParameters);
+        public static IPEImage FromFile(string filePath, PEReadParameters readParameters)
+        {
+            var peImage = FromFile(PEFile.FromFile(filePath), readParameters);
+            peImage.FilePath = filePath;
+            return peImage;
+        }
 
         /// <summary>
         /// Opens a PE image from a buffer.
@@ -89,7 +98,12 @@ namespace AsmResolver.PE
         /// <param name="peFile">The PE file object.</param>
         /// <returns>The PE image that was opened.</returns>
         /// <exception cref="BadImageFormatException">Occurs when the file does not follow the PE file format.</exception>
-        public static IPEImage FromFile(IPEFile peFile) => FromFile(peFile, CreateDefaultReadParameters(peFile));
+        public static IPEImage FromFile(IPEFile peFile)
+        {
+            var peImage = FromFile(peFile, CreateDefaultReadParameters(peFile));
+            peImage.FilePath = peFile.FilePath;
+            return peImage;
+        }
 
         /// <summary>
         /// Opens a PE image from a PE file object.
@@ -111,6 +125,12 @@ namespace AsmResolver.PE
             _exports = new LazyVariable<IExportDirectory>(GetExports);
             _resources = new LazyVariable<IResourceDirectory>(GetResources);
             _dotNetDirectory = new LazyVariable<IDotNetDirectory>(GetDotNetDirectory);
+        }
+
+        public string FilePath
+        {
+            get;
+            set;
         }
 
         /// <inheritdoc />

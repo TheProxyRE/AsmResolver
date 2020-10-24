@@ -71,7 +71,9 @@ namespace AsmResolver.DotNet.Serialized
             var moduleTable = tablesStream.GetTable<ModuleDefinitionRow>(TableIndex.Module);
             if (!moduleTable.TryGetByRid(1, out _row))
                 throw new BadImageFormatException("Module definition table does not contain any rows.");
-            
+
+            FilePath = peImage.FilePath;
+
             // Store parameters in fields.
             ReadParameters = readParameters ?? throw new ArgumentNullException(nameof(readParameters));
             

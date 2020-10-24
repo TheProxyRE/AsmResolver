@@ -24,6 +24,7 @@ namespace AsmResolver.PE
         public SerializedPEImage(IPEFile peFile, PEReadParameters readParameters)
         {
             PEFile = peFile ?? throw new ArgumentNullException(nameof(peFile));
+            FilePath = peFile.FilePath;
             ReadParameters = readParameters;
 
             MachineType = PEFile.FileHeader.Machine;

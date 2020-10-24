@@ -9,6 +9,12 @@ namespace AsmResolver.PE.File
     /// </summary>
     public interface IPEFile : ISegmentReferenceResolver, IOffsetConverter
     {
+        string FilePath
+        {
+            get;
+            set;
+        }
+
         /// <summary>
         /// Gets or sets the DOS header of the PE file.
         /// </summary>

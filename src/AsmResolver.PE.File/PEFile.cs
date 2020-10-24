@@ -24,7 +24,12 @@ namespace AsmResolver.PE.File
         /// <param name="path">The file path to the PE file.</param>
         /// <returns>The PE file that was read.</returns>
         /// <exception cref="BadImageFormatException">Occurs when the file does not follow the PE file format.</exception>
-        public static PEFile FromFile(string path) => FromReader(new ByteArrayReader(System.IO.File.ReadAllBytes(path)));
+        public static PEFile FromFile(string path)
+        {
+            var peFile = FromBytes(System.IO.File.ReadAllBytes(path));
+            peFile.FilePath = path;
+            return peFile;
+        }
 
         /// <summary>
         /// Reads an unmapped PE file from memory.
@@ -70,6 +75,12 @@ namespace AsmResolver.PE.File
             OptionalHeader = optionalHeader ?? throw new ArgumentNullException(nameof(optionalHeader));
             _extraSectionData = new LazyVariable<ISegment>(GetExtraSectionData);
             MappingMode = PEMappingMode.Unmapped;
+        }
+
+        public string FilePath
+        {
+            get;
+            set;
         }
 
         /// <inheritdoc />
