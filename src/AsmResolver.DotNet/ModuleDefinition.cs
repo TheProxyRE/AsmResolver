@@ -62,7 +62,7 @@ namespace AsmResolver.DotNet
         /// <param name="filePath">The file path to the input executable to load.</param>
         /// <returns>The module.</returns>
         /// <exception cref="BadImageFormatException">Occurs when the image does not contain a valid .NET metadata directory.</exception>
-        public static ModuleDefinition FromFile(string filePath) => FromFile(filePath, new ModuleReadParameters());
+        public static ModuleDefinition FromFile(string filePath) => FromFile(filePath, new ModuleReadParameters(Path.GetDirectoryName(filePath)));
 
         /// <summary>
         /// Reads a .NET module from the provided input file.
